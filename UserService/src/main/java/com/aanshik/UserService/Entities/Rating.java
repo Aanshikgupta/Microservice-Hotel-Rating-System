@@ -15,4 +15,6 @@ public class Rating {
     private Integer rating;
     private String feed;
 
+    private Hotel hotel;
+
 }

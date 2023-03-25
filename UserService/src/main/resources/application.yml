@@ -6,7 +6,7 @@ spring:
     url: jdbc:mysql://localhost:3306/user-service
     username: root
     password: root@123
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
@@ -15,8 +15,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
+
   application:
     name: USER-SERVICE
+
+
+
 eureka:
   instance:
     prefer-ip-address: true

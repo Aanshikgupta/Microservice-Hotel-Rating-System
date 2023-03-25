@@ -6,6 +6,7 @@ import com.aanshik.UserService.Entities.User;
 import com.aanshik.UserService.Exceptions.ResourceNotFoundException;
 import com.aanshik.UserService.Repository.UserRepo;
 import com.aanshik.UserService.Services.UserService;
+import com.aanshik.UserService.Utils.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllUsers() {
-        return userRepo.findAll();
+        List<User> users = userRepo.findAll();
+        for (User user : users) {
+            user = getUser(user.getId());
+        }
+        return users;
     }
 
     @Override
@@ -47,27 +52,33 @@ public class UserServiceImpl implements UserService {
         //Got the user from UserId here
         User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
-        String user_Id = user.getId();
-        //fetch rating for above user from rating service
-        //http://localhost:8083/ratings/users/{userID} for getting rating of a user using his/her ID
 
-        ResponseEntity<Rating[]> ratingsForUser = restTemplate.getForEntity("http://localhost:8083/ratings/users/" + user_Id, Rating[].class);
-        List<Rating> ratings = Arrays.asList(ratingsForUser.getBody());
+        List<Rating> ratings = getRatingByUserId(userId);
         logger.info("{}", ratings);
 
-        for (Rating rating : ratings) {
-            Hotel hotel = getHotelByRating(rating.getHotelId());
-            rating.setHotel(hotel);
-        }
 
-        user.setRatings(Arrays.asList(ratingsForUser.getBody()));
+        user.setRatings(ratings);
         User savedUser = userRepo.save(user);
 
         return savedUser;
     }
 
-    private Hotel getHotelByRating(String hotelId) {
-        Hotel hotel = restTemplate.getForEntity("http://localhost:8082/hotels/" + hotelId, Hotel.class).getBody();
+    public List<Rating> getRatingByUserId(String userId) {
+        //fetch rating for above user from rating service
+        //http://localhost:8083/ratings/users/{userID} for getting rating of a user using his/her ID
+        ResponseEntity<Rating[]> ratingsForUser = restTemplate.getForEntity("http://" + Constants.RATING_SERVICE + "/ratings/users/" + userId, Rating[].class);
+        List<Rating> ratings = Arrays.asList(ratingsForUser.getBody());
+
+        for (Rating rating : ratings) {
+            Hotel hotel = getHotelByHotelId(rating.getHotelId());
+            rating.setHotel(hotel);
+        }
+
+        return ratings;
+    }
+
+    private Hotel getHotelByHotelId(String hotelId) {
+        Hotel hotel = restTemplate.getForEntity("http://" + Constants.HOTEL_SERVICE + "/hotels/" + hotelId, Hotel.class).getBody();
         return hotel;
     }
 
